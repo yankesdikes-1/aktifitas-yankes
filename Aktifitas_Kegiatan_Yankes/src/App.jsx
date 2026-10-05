@@ -600,7 +600,7 @@ export default function App() {
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Pembinaan Puskesmas dan Klinik Pratama"
+                  placeholder="Contoh: Visitasi Klinik Pratama"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
@@ -678,7 +678,7 @@ export default function App() {
                 <div className="flex gap-2 mb-2">
                   <input
                     type="text"
-                    placeholder="Contoh: dr. Ni Wayan Sudarmi"
+                    placeholder="Contoh: Gus Satya"
                     value={inputName}
                     onChange={(e) => setInputName(e.target.value)}
                     onKeyDown={(e) => {
