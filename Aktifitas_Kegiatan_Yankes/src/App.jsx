@@ -426,6 +426,7 @@ export default function App() {
                 <option value="Cuti">Cuti</option>
                 <option value="Sakit">Sakit</option>
                 <option value="Dinas">Dinas</option>
+                <option value="Rapat">Rapat</option>
               </select>
             </div>
 
@@ -605,11 +606,10 @@ export default function App() {
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
                   >
-                    <option value="Pekerjaan">Pekerjaan</option>
-                    <option value="Pelayanan">Pelayanan</option>
-                    <option value="Rapat/Koordinasi">Rapat/Koordinasi</option>
-                    <option value="Fasilitas Yankes">Fasilitas Yankes</option>
-                    <option value="Lainnya">Lainnya</option>
+                    <option value="Cuti">Cuti</option>
+                    <option value="Sakit">Sakit</option>
+                    <option value="Dinas">Dinas</option>
+                    <option value="Rapat">Rapat</option>
                   </select>
                 </div>
 
