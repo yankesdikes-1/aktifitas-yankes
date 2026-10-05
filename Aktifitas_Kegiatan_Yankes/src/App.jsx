@@ -315,14 +315,6 @@ export default function App() {
           </div>
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <button
-              onClick={() => setShowConfigInfo(true)}
-              className="bg-emerald-800/80 hover:bg-emerald-900 text-emerald-100 text-xs px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition border border-emerald-600/50 font-medium shadow-2xs"
-              title="Info Supabase & Vercel Setup"
-            >
-              <Database className="w-4 h-4 text-emerald-300" />
-              <span className="hidden md:inline">Setup Vercel & Supabase</span>
-            </button>
-            <button
               onClick={() => { resetForm(); setIsModalOpen(true); }}
               className="bg-white text-emerald-700 hover:bg-emerald-50 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition shrink-0"
             >
