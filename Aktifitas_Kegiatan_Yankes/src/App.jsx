@@ -423,11 +423,9 @@ export default function App() {
                 className="bg-transparent text-sm text-slate-700 focus:outline-none cursor-pointer w-full"
               >
                 <option value="all">Semua Kategori</option>
-                <option value="Pekerjaan">Pekerjaan</option>
-                <option value="Pelayanan">Pelayanan</option>
-                <option value="Rapat/Koordinasi">Rapat/Koordinasi</option>
-                <option value="Fasilitas Yankes">Fasilitas Yankes</option>
-                <option value="Lainnya">Lainnya</option>
+                <option value="Cuti">Cuti</option>
+                <option value="Sakit">Sakit</option>
+                <option value="Dinas">Dinas</option>
               </select>
             </div>
 
