@@ -27,7 +27,11 @@ export default function App() {
   const [category, setCategory] = useState('Pekerjaan');
   const [priority, setPriority] = useState('Sedang');
   const [date, setDate] = useState(todayStr);
-  const [names, setNames] = useState('');
+  
+  // Ubah names menjadi array dan tambahkan inputName sementara
+  const [names, setNames] = useState([]);
+  const [inputName, setInputName] = useState('');
+
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfUrl, setPdfUrl] = useState('');
   const [pdfName, setPdfName] = useState('');
@@ -66,6 +70,16 @@ export default function App() {
   const saveToLocalAndState = (updated) => {
     setActivities(updated);
     localStorage.setItem('yankes_activities', JSON.stringify(updated));
+  };
+
+  const handleAddName = () => {
+    if (!inputName.trim()) return;
+    setNames([...names, inputName.trim()]);
+    setInputName('');
+  };
+
+  const handleRemoveName = (indexToRemove) => {
+    setNames(names.filter((_, index) => index !== indexToRemove));
   };
 
   const handleFileUpload = async (e) => {
@@ -126,17 +140,12 @@ export default function App() {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const namesArray = names
-      .split(',')
-      .map(n => n.trim())
-      .filter(n => n.length > 0);
-
     const newActivity = {
       title,
       category,
       priority,
       date,
-      names: namesArray,
+      names: names, // Menyimpan langsung sebagai array
       pdf_url: pdfUrl || '',
       pdf_name: pdfName || '',
       completed: false
@@ -226,7 +235,8 @@ export default function App() {
     setCategory(activity.category);
     setPriority(activity.priority);
     setDate(activity.date || todayStr);
-    setNames(Array.isArray(activity.names) ? activity.names.join(', ') : (activity.names || ''));
+    setNames(Array.isArray(activity.names) ? activity.names : (activity.names ? [activity.names] : []));
+    setInputName('');
     setPdfUrl(activity.pdf_url || '');
     setPdfName(activity.pdf_name || '');
     setIsEditing(true);
@@ -238,7 +248,8 @@ export default function App() {
     setCategory('Pekerjaan');
     setPriority('Sedang');
     setDate(todayStr);
-    setNames('');
+    setNames([]);
+    setInputName('');
     setPdfFile(null);
     setPdfUrl('');
     setPdfName('');
@@ -662,15 +673,48 @@ export default function App() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
-                  Nama Petugas / Yang Mengikuti (Pisahkan dengan koma)
+                  Nama Petugas / Yang Mengikuti
                 </label>
-                <input
-                  type="text"
-                  placeholder="Contoh: dr. Ni Wayan Sudarmi, Kadek Budi, A.Md.Kep"
-                  value={names}
-                  onChange={(e) => setNames(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
-                />
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="Contoh: dr. Ni Wayan Sudarmi"
+                    value={inputName}
+                    onChange={(e) => setInputName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddName();
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddName}
+                    className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-semibold transition shrink-0"
+                  >
+                    Tambah
+                  </button>
+                </div>
+
+                {/* List Chip Nama Petugas yang Ditambahkan */}
+                {names.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    {names.map((name, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1.5 bg-white text-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs font-medium">
+                        {name}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveName(idx)}
+                          className="text-slate-400 hover:text-rose-600 transition ml-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
