@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   ClipboardList, Plus, Search, Filter, Calendar, CheckCircle2, 
   Clock, AlertCircle, FileText, Upload, Trash2, Edit2, X, 
-  Users, Check, ExternalLink, ShieldCheck, Database, Info
+  Users, Check, ExternalLink, ShieldCheck, Database, Info, Download
 } from 'lucide-react';
 import { supabase } from './supabase';
 
@@ -50,7 +50,6 @@ export default function App() {
       setActivities(data || []);
     } catch (error) {
       console.error('Error fetching activities:', error);
-      // Fallback to localStorage if Supabase is not configured yet
       const localData = localStorage.getItem('yankes_activities');
       if (localData) {
         setActivities(JSON.parse(localData));
@@ -81,9 +80,8 @@ export default function App() {
 
     setUploadingPdf(true);
     try {
-      // Upload ke Supabase Storage bucket 'documents' jika tersedia
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36.substring(2, 7))}.${fileExt}`;
+      const fileName = Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '.' + fileExt;
       const filePath = `${fileName}`;
 
       const { data, error } = await supabase.storage
@@ -91,7 +89,6 @@ export default function App() {
         .upload(filePath, file);
 
       if (error) {
-        // Fallback to Base64 if storage bucket is not configured
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => {
@@ -110,7 +107,6 @@ export default function App() {
       setPdfName(file.name);
     } catch (err) {
       console.error('Upload error:', err);
-      // Fallback base64
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
@@ -164,7 +160,6 @@ export default function App() {
         if (data && data.length > 0) {
           saveToLocalAndState([data[0], ...activities]);
         } else {
-          // Fallback if offline/local
           const offlineItem = { id: Date.now(), ...newActivity };
           saveToLocalAndState([offlineItem, ...activities]);
         }
@@ -174,7 +169,6 @@ export default function App() {
       setIsModalOpen(false);
     } catch (err) {
       console.error('Save error:', err);
-      // Fallback local operation
       if (isEditing) {
         const updated = activities.map(act => act.id === currentId ? { ...act, ...newActivity } : act);
         saveToLocalAndState(updated);
@@ -248,7 +242,6 @@ export default function App() {
     setCurrentId(null);
   };
 
-  // Filter logic
   const filteredActivities = activities.filter(act => {
     const matchesSearch = act.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
       (Array.isArray(act.names) && act.names.some(n => n.toLowerCase().includes(searchTerm.toLowerCase())));
@@ -261,39 +254,72 @@ export default function App() {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
+  // Fungsi Export ke Excel (CSV format)
+  const exportToExcel = () => {
+    if (filteredActivities.length === 0) {
+      alert('Tidak ada data kegiatan untuk diexport!');
+      return;
+    }
+
+    const headers = ['No', 'Nama Kegiatan', 'Kategori', 'Prioritas', 'Tanggal', 'Petugas / Nama Terlibat', 'Status'];
+    const rows = filteredActivities.map((act, idx) => [
+      idx + 1,
+      `"${(act.title || '').replace(/"/g, '""')}"`,
+      `"${(act.category || '').replace(/"/g, '""')}"`,
+      `"${(act.priority || '').replace(/"/g, '""')}"`,
+      `"${act.date || ''}"`,
+      `"${Array.isArray(act.names) ? act.names.join(', ') : (act.names || '')}"`,
+      `"${act.completed ? 'Selesai' : 'Belum Selesai'}"`
+    ]);
+
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(e => e.join(';'))
+    ].join('\n');
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Data_Kegiatan_Yankes_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const totalCount = activities.length;
   const completedCount = activities.filter(a => a.completed).length;
   const pendingCount = totalCount - completedCount;
   const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 pb-12">
+    <div className="min-h-screen bg-slate-100/60 text-slate-800 pb-12 font-sans">
       {/* Header */}
       <header className="bg-emerald-700 text-white shadow-md sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-white p-2 rounded-xl shadow-sm flex items-center justify-center">
-              <img src="/yankes-logo.png" alt="Logo Yankes" className="w-10 h-10 object-contain" />
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="flex items-center justify-center shrink-0">
+              <img src="/yankes-logo.png" alt="Logo Yankes" className="w-24 h-24 object-contain" />
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Aktifitas Kegiatan Yankes</h1>
-              <p className="text-emerald-100 text-xs sm:text-sm">Bidang Pelayanan Kesehatan - Dinas Kesehatan Kabupaten Badung</p>
+              <p className="text-emerald-100 text-xs sm:text-sm font-medium mt-0.5">Bidang Pelayanan Kesehatan - Dinas Kesehatan Kabupaten Badung</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <button
               onClick={() => setShowConfigInfo(true)}
-              className="bg-emerald-800 hover:bg-emerald-900 text-emerald-100 text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition border border-emerald-600"
+              className="bg-emerald-800/80 hover:bg-emerald-900 text-emerald-100 text-xs px-3.5 py-2.5 rounded-xl flex items-center gap-2 transition border border-emerald-600/50 font-medium shadow-2xs"
               title="Info Supabase & Vercel Setup"
             >
-              <Database className="w-4 h-4" />
+              <Database className="w-4 h-4 text-emerald-300" />
               <span className="hidden md:inline">Setup Vercel & Supabase</span>
             </button>
             <button
               onClick={() => { resetForm(); setIsModalOpen(true); }}
-              className="bg-white text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-2 shadow-sm transition"
+              className="bg-white text-emerald-700 hover:bg-emerald-50 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition shrink-0"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-700" />
               <span>Tambah Kegiatan</span>
             </button>
           </div>
@@ -302,65 +328,65 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 mt-8">
         {/* Dashboard Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/70 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Total Kegiatan</p>
-              <p className="text-3xl font-bold text-slate-800 mt-1">{totalCount}</p>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">Total Kegiatan</p>
+              <p className="text-2xl sm:text-3xl font-bold text-slate-800 mt-1">{totalCount}</p>
             </div>
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-              <ClipboardList className="w-6 h-6" />
+            <div className="w-11 h-11 sm:w-12 sm:h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+              <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+          <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/70 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Selesai</p>
-              <p className="text-3xl font-bold text-emerald-600 mt-1">{completedCount}</p>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">Selesai</p>
+              <p className="text-2xl sm:text-3xl font-bold text-emerald-600 mt-1">{completedCount}</p>
             </div>
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6" />
+            <div className="w-11 h-11 sm:w-12 sm:h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+          <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/70 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Belum Selesai</p>
-              <p className="text-3xl font-bold text-amber-600 mt-1">{pendingCount}</p>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">Belum Selesai</p>
+              <p className="text-2xl sm:text-3xl font-bold text-amber-600 mt-1">{pendingCount}</p>
             </div>
-            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
-              <Clock className="w-6 h-6" />
+            <div className="w-11 h-11 sm:w-12 sm:h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+          <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200/70 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Progress Harian</p>
-              <p className="text-3xl font-bold text-sky-600 mt-1">{completionRate}%</p>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">Progress Harian</p>
+              <p className="text-2xl sm:text-3xl font-bold text-sky-600 mt-1">{completionRate}%</p>
             </div>
-            <div className="w-12 h-12 bg-sky-50 text-sky-600 rounded-xl flex items-center justify-center">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="w-11 h-11 sm:w-12 sm:h-12 bg-sky-50 text-sky-600 rounded-xl flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
         </div>
 
-        {/* Filters & Search Toolbar */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col lg:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full lg:w-96">
+        {/* Filters, Search Toolbar & Export Excel */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-slate-200/70 mb-6 flex flex-col lg:flex-row gap-3.5 items-center justify-between">
+          <div className="relative w-full lg:w-80">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               placeholder="Cari kegiatan atau nama petugas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-              <Filter className="w-4 h-4 text-slate-500" />
+          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+            <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2 w-full sm:w-auto">
+              <Filter className="w-4 h-4 text-slate-500 shrink-0" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-transparent text-sm text-slate-700 focus:outline-none cursor-pointer"
+                className="bg-transparent text-sm text-slate-700 focus:outline-none cursor-pointer w-full"
               >
                 <option value="all">Semua Status</option>
                 <option value="pending">Belum Selesai</option>
@@ -368,11 +394,11 @@ export default function App() {
               </select>
             </div>
 
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+            <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2 w-full sm:w-auto">
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="bg-transparent text-sm text-slate-700 focus:outline-none cursor-pointer"
+                className="bg-transparent text-sm text-slate-700 focus:outline-none cursor-pointer w-full"
               >
                 <option value="all">Semua Kategori</option>
                 <option value="Pekerjaan">Pekerjaan</option>
@@ -382,19 +408,28 @@ export default function App() {
                 <option value="Lainnya">Lainnya</option>
               </select>
             </div>
+
+            <button
+              onClick={exportToExcel}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition w-full sm:w-auto justify-center shrink-0"
+              title="Download Data ke Excel"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Excel</span>
+            </button>
           </div>
         </div>
 
         {/* Activity List */}
         {loading ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-slate-100 shadow-sm">
+          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/70 shadow-xs">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-600 border-t-transparent"></div>
             <p className="mt-4 text-slate-500 text-sm">Memuat data kegiatan...</p>
           </div>
         ) : filteredActivities.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-slate-100 shadow-sm">
+          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/70 shadow-xs">
             <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-600 font-medium">Tidak ada kegiatan ditemukan</p>
+            <p className="text-slate-700 font-semibold">Tidak ada kegiatan ditemukan</p>
             <p className="text-slate-400 text-sm mt-1">Coba sesuaikan filter atau tambahkan kegiatan baru.</p>
           </div>
         ) : (
@@ -408,8 +443,8 @@ export default function App() {
               return (
                 <div 
                   key={act.id} 
-                  className={`bg-white rounded-2xl p-5 border shadow-sm transition flex flex-col justify-between ${
-                    act.completed ? 'border-emerald-200 bg-emerald-50/20' : 'border-slate-100 hover:shadow-md'
+                  className={`bg-white rounded-2xl p-5 border shadow-xs transition flex flex-col justify-between ${
+                    act.completed ? 'border-emerald-200 bg-emerald-50/10' : 'border-slate-200/70 hover:shadow-md'
                   }`}
                 >
                   <div>
@@ -424,28 +459,28 @@ export default function App() {
                     </div>
 
                     {/* Title */}
-                    <h3 className={`font-semibold text-base mb-2 ${act.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                    <h3 className={`font-semibold text-base mb-2.5 leading-snug ${act.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
                       {act.title}
                     </h3>
 
                     {/* Date */}
                     {act.date && (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-3">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      <div className="flex items-center gap-2 text-xs text-slate-500 mb-3.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span>{new Date(act.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                       </div>
                     )}
 
                     {/* Names / Assigned Personnel */}
                     {act.names && Array.isArray(act.names) && act.names.length > 0 && (
-                      <div className="mb-4 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 mb-1.5">
-                          <Users className="w-3.5 h-3.5 text-emerald-600" />
+                      <div className="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 mb-2">
+                          <Users className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                           <span>Petugas / Nama Terlibat:</span>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {act.names.map((name, idx) => (
-                            <span key={idx} className="bg-white text-slate-700 text-xs px-2 py-0.5 rounded-md border border-slate-200 font-medium shadow-2xs">
+                            <span key={idx} className="bg-white text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200/80 font-medium shadow-2xs">
                               {name}
                             </span>
                           ))}
@@ -460,7 +495,7 @@ export default function App() {
                           href={act.pdf_url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-xl border border-emerald-200 hover:bg-emerald-100 transition font-medium w-full truncate"
+                          className="inline-flex items-center gap-2 text-xs bg-emerald-50 text-emerald-700 px-3 py-2 rounded-xl border border-emerald-200 hover:bg-emerald-100 transition font-medium w-full truncate"
                         >
                           <FileText className="w-4 h-4 shrink-0 text-emerald-600" />
                           <span className="truncate">{act.pdf_name || 'Dokumen PDF'}</span>
@@ -471,10 +506,10 @@ export default function App() {
                   </div>
 
                   {/* Footer Actions */}
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-2">
+                  <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between mt-2">
                     <button
                       onClick={() => toggleComplete(act.id, act.completed)}
-                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl transition ${
+                      className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl transition ${
                         act.completed 
                           ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' 
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -487,14 +522,14 @@ export default function App() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleEdit(act)}
-                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition"
+                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-xl transition"
                         title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(act.id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
                         title="Hapus"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -526,7 +561,7 @@ export default function App() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Nama Kegiatan <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -541,7 +576,7 @@ export default function App() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                     Kategori
                   </label>
                   <select
@@ -558,7 +593,7 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                     Prioritas
                   </label>
                   <select
@@ -575,7 +610,7 @@ export default function App() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                     Tanggal Kegiatan
                   </label>
                   <input
@@ -587,11 +622,11 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                     Upload Dokumen PDF
                   </label>
-                  <label className="flex items-center justify-center gap-2 w-full px-3 py-2 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 cursor-pointer transition">
-                    <Upload className="w-4 h-4 text-emerald-600" />
+                  <label className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 cursor-pointer transition">
+                    <Upload className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span className="truncate">{pdfName || 'Pilih PDF (Max 2MB)'}</span>
                     <input 
                       type="file" 
@@ -605,7 +640,7 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Nama Petugas / Yang Mengikuti (Pisahkan dengan koma)
                 </label>
                 <input
@@ -621,13 +656,13 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-sm font-semibold text-white shadow-sm transition"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-sm font-semibold text-white shadow-sm transition"
                 >
                   {isEditing ? 'Simpan Perubahan' : 'Tambah Kegiatan'}
                 </button>
