@@ -320,7 +320,7 @@ export default function App() {
               <img src="/yankes-logo.png" alt="Logo Yankes" className="w-24 h-24 object-contain" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Aktifitas Kegiatan Yankes</h1>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">AKTIVITAS KEGIATAN YANKES</h1>
               <p className="text-emerald-100 text-xs sm:text-sm font-medium mt-0.5">Bidang Pelayanan Kesehatan - Dinas Kesehatan Kabupaten Badung</p>
             </div>
           </div>
