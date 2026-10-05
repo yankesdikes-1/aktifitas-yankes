@@ -13,6 +13,10 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   
+  // Filter Tanggal (Default: Tanggal hari ini)
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [dateFilter, setDateFilter] = useState(todayStr); // 'all' atau format 'YYYY-MM-DD'
+  
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -22,7 +26,7 @@ export default function App() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Pekerjaan');
   const [priority, setPriority] = useState('Sedang');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(todayStr);
   const [names, setNames] = useState('');
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfUrl, setPdfUrl] = useState('');
@@ -221,7 +225,7 @@ export default function App() {
     setTitle(activity.title);
     setCategory(activity.category);
     setPriority(activity.priority);
-    setDate(activity.date || new Date().toISOString().split('T')[0]);
+    setDate(activity.date || todayStr);
     setNames(Array.isArray(activity.names) ? activity.names.join(', ') : (activity.names || ''));
     setPdfUrl(activity.pdf_url || '');
     setPdfName(activity.pdf_name || '');
@@ -233,7 +237,7 @@ export default function App() {
     setTitle('');
     setCategory('Pekerjaan');
     setPriority('Sedang');
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(todayStr);
     setNames('');
     setPdfFile(null);
     setPdfUrl('');
@@ -251,7 +255,10 @@ export default function App() {
     
     const matchesCategory = categoryFilter === 'all' ? true : act.category === categoryFilter;
 
-    return matchesSearch && matchesStatus && matchesCategory;
+    // Filter Tanggal
+    const matchesDate = dateFilter === 'all' ? true : act.date === dateFilter;
+
+    return matchesSearch && matchesStatus && matchesCategory && matchesDate;
   });
 
   // Fungsi Export ke Excel (CSV format)
@@ -281,7 +288,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `Data_Kegiatan_Yankes_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `Data_Kegiatan_Yankes_${dateFilter === 'all' ? 'Semua' : dateFilter}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -369,7 +376,7 @@ export default function App() {
 
         {/* Filters, Search Toolbar & Export Excel */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-xs border border-slate-200/70 mb-6 flex flex-col lg:flex-row gap-3.5 items-center justify-between">
-          <div className="relative w-full lg:w-80">
+          <div className="relative w-full lg:w-72">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
@@ -381,6 +388,28 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+            {/* Filter Tanggal */}
+            <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2 w-full sm:w-auto">
+              <Calendar className="w-4 h-4 text-slate-500 shrink-0" />
+              <input
+                type="date"
+                value={dateFilter === 'all' ? '' : dateFilter}
+                onChange={(e) => setDateFilter(e.target.value || 'all')}
+                className="bg-transparent text-sm text-slate-700 focus:outline-none cursor-pointer w-full"
+                title="Pilih Tanggal Kegiatan"
+              />
+              {dateFilter !== 'all' && (
+                <button
+                  onClick={() => setDateFilter('all')}
+                  className="text-xs text-rose-600 font-semibold hover:underline ml-1 shrink-0"
+                  title="Tampilkan Semua Tanggal"
+                >
+                  Semua
+                </button>
+              )}
+            </div>
+
+            {/* Filter Status */}
             <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2 w-full sm:w-auto">
               <Filter className="w-4 h-4 text-slate-500 shrink-0" />
               <select
@@ -394,6 +423,7 @@ export default function App() {
               </select>
             </div>
 
+            {/* Filter Kategori */}
             <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2 w-full sm:w-auto">
               <select
                 value={categoryFilter}
@@ -409,6 +439,7 @@ export default function App() {
               </select>
             </div>
 
+            {/* Tombol Export Excel */}
             <button
               onClick={exportToExcel}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition w-full sm:w-auto justify-center shrink-0"
@@ -429,8 +460,8 @@ export default function App() {
         ) : filteredActivities.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/70 shadow-xs">
             <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-700 font-semibold">Tidak ada kegiatan ditemukan</p>
-            <p className="text-slate-400 text-sm mt-1">Coba sesuaikan filter atau tambahkan kegiatan baru.</p>
+            <p className="text-slate-700 font-semibold">Tidak ada kegiatan ditemukan untuk tanggal ini</p>
+            <p className="text-slate-400 text-sm mt-1">Ubah filter tanggal di atas untuk melihat kegiatan hari kemarin atau tanggal lainnya.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
