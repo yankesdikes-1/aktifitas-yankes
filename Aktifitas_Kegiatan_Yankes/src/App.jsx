@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   ClipboardList, Plus, Search, Filter, Calendar, CheckCircle2, 
   Clock, AlertCircle, FileText, Upload, Trash2, Edit2, X, 
-  Users, Check, ExternalLink, ShieldCheck, Database, Info, Download
+  Users, Check, ExternalLink, ShieldCheck, Database, Info, Download, Award
 } from 'lucide-react';
 import { supabase } from './supabase';
 
@@ -271,6 +271,23 @@ export default function App() {
     return matchesSearch && matchesStatus && matchesCategory && matchesDate;
   });
 
+  // Hitung Akumulasi / Rekapan Nama Petugas dari data yang sedang difilter
+  const personnelSummary = (() => {
+    const counts = {};
+    filteredActivities.forEach(act => {
+      if (Array.isArray(act.names)) {
+        act.names.forEach(name => {
+          const trimmed = name.trim();
+          if (trimmed) {
+            counts[trimmed] = (counts[trimmed] || 0) + 1;
+          }
+        });
+      }
+    });
+    // Ubah ke array & urutkan dari yang paling sering bertugas
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  })();
+
   const exportToExcel = () => {
     if (filteredActivities.length === 0) {
       alert('Tidak ada data kegiatan untuk diexport!');
@@ -458,127 +475,197 @@ export default function App() {
           </div>
         </div>
 
-        {/* Activity List */}
-        {loading ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/70 shadow-xs">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-600 border-t-transparent"></div>
-            <p className="mt-4 text-slate-500 text-sm">Memuat data kegiatan...</p>
-          </div>
-        ) : filteredActivities.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/70 shadow-xs">
-            <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-700 font-semibold">Tidak ada kegiatan ditemukan untuk tanggal ini</p>
-            <p className="text-slate-400 text-sm mt-1">Ubah filter tanggal di atas untuk melihat kegiatan pada tanggal lainnya.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredActivities.map((act) => {
-              const priorityColor = 
-                act.priority === 'Tinggi' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                act.priority === 'Sedang' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
-                'bg-emerald-50 text-emerald-700 border-emerald-200';
+        {/* Main Content Layout (Grid dengan Panel Rekapan di Kanan) */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+          
+          {/* Bagian Kiri: Daftar Kegiatan (3 Kolom) */}
+          <div className="lg:col-span-3">
+            {loading ? (
+              <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/70 shadow-xs">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-600 border-t-transparent"></div>
+                <p className="mt-4 text-slate-500 text-sm">Memuat data kegiatan...</p>
+              </div>
+            ) : filteredActivities.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/70 shadow-xs">
+                <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-700 font-semibold">Tidak ada kegiatan ditemukan untuk filter ini</p>
+                <p className="text-slate-400 text-sm mt-1">Ubah filter tanggal atau pencarian di atas untuk melihat data lainnya.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {filteredActivities.map((act) => {
+                  const priorityColor = 
+                    act.priority === 'Tinggi' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                    act.priority === 'Sedang' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                    'bg-emerald-50 text-emerald-700 border-emerald-200';
 
-              return (
-                <div 
-                  key={act.id} 
-                  className={`bg-white rounded-2xl p-5 border shadow-xs transition flex flex-col justify-between ${
-                    act.completed ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200/70 hover:shadow-md'
-                  }`}
-                >
-                  <div>
-                    {/* Top Meta: Kategori & Prioritas */}
-                    <div className="flex items-center justify-between gap-2 mb-2.5">
-                      <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
-                        {act.category}
-                      </span>
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-lg border ${priorityColor}`}>
-                        {act.priority}
-                      </span>
-                    </div>
-
-                    {/* Title Kegiatan */}
-                    <h3 className={`font-bold text-base mb-2 leading-snug ${act.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                      {act.title}
-                    </h3>
-
-                    {/* Tanggal Kegiatan (Dibuat Lebih Menonjol) */}
-                    {act.date && (
-                      <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50/80 px-3 py-1.5 rounded-xl mb-3.5 border border-emerald-100">
-                        <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>{new Date(act.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                      </div>
-                    )}
-
-                    {/* Names / Assigned Personnel (Dibuat Sangat Jelas) */}
-                    {act.names && Array.isArray(act.names) && act.names.length > 0 && (
-                      <div className="mb-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-2">
-                          <Users className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>Petugas / Nama Terlibat ({act.names.length}):</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {act.names.map((name, idx) => (
-                            <span key={idx} className="bg-white text-emerald-900 text-xs px-2.5 py-1 rounded-lg border border-emerald-200/80 font-semibold shadow-2xs">
-                              ✓ {name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* PDF Attachment */}
-                    {act.pdf_url && (
-                      <div className="mb-4">
-                        <a 
-                          href={act.pdf_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-xs bg-slate-50 text-slate-700 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 transition font-medium w-full truncate"
-                        >
-                          <FileText className="w-4 h-4 shrink-0 text-emerald-600" />
-                          <span className="truncate">{act.pdf_name || 'Dokumen PDF'}</span>
-                          <ExternalLink className="w-3.5 h-3.5 ml-auto shrink-0 text-slate-400" />
-                        </a>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Footer Actions */}
-                  <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between mt-2">
-                    <button
-                      onClick={() => toggleComplete(act.id, act.completed)}
-                      className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl transition ${
-                        act.completed 
-                          ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' 
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  return (
+                    <div 
+                      key={act.id} 
+                      className={`bg-white rounded-2xl p-5 border shadow-xs transition flex flex-col justify-between ${
+                        act.completed ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200/70 hover:shadow-md'
                       }`}
                     >
-                      <Check className="w-4 h-4" />
-                      <span>{act.completed ? 'Selesai' : 'Tandai Selesai'}</span>
-                    </button>
+                      <div>
+                        {/* Top Meta: Kategori & Prioritas */}
+                        <div className="flex items-center justify-between gap-2 mb-2.5">
+                          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
+                            {act.category}
+                          </span>
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-lg border ${priorityColor}`}>
+                            {act.priority}
+                          </span>
+                        </div>
 
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleEdit(act)}
-                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-xl transition"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(act.id)}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
-                        title="Hapus"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        {/* Title Kegiatan */}
+                        <h3 className={`font-bold text-base mb-2 leading-snug ${act.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                          {act.title}
+                        </h3>
+
+                        {/* Tanggal Kegiatan */}
+                        {act.date && (
+                          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50/80 px-3 py-1.5 rounded-xl mb-3.5 border border-emerald-100">
+                            <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>{new Date(act.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                          </div>
+                        )}
+
+                        {/* Names / Assigned Personnel */}
+                        {act.names && Array.isArray(act.names) && act.names.length > 0 && (
+                          <div className="mb-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-2">
+                              <Users className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>Petugas / Nama Terlibat ({act.names.length}):</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {act.names.map((name, idx) => (
+                                <span 
+                                  key={idx} 
+                                  onClick={() => setSearchTerm(name)}
+                                  className="bg-white text-emerald-900 text-xs px-2.5 py-1 rounded-lg border border-emerald-200/80 font-semibold shadow-2xs cursor-pointer hover:bg-emerald-50 transition"
+                                  title="Klik untuk filter kegiatan petugas ini"
+                                >
+                                  ✓ {name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* PDF Attachment */}
+                        {act.pdf_url && (
+                          <div className="mb-4">
+                            <a 
+                              href={act.pdf_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-xs bg-slate-50 text-slate-700 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 transition font-medium w-full truncate"
+                            >
+                              <FileText className="w-4 h-4 shrink-0 text-emerald-600" />
+                              <span className="truncate">{act.pdf_name || 'Dokumen PDF'}</span>
+                              <ExternalLink className="w-3.5 h-3.5 ml-auto shrink-0 text-slate-400" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between mt-2">
+                        <button
+                          onClick={() => toggleComplete(act.id, act.completed)}
+                          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl transition ${
+                            act.completed 
+                              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' 
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          <Check className="w-4 h-4" />
+                          <span>{act.completed ? 'Selesai' : 'Tandai Selesai'}</span>
+                        </button>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleEdit(act)}
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-xl transition"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(act.id)}
+                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                            title="Hapus"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Bagian Kanan: Panel Akumulasi / Rekapan Petugas */}
+          <div className="lg:col-span-1 bg-white rounded-2xl p-5 border border-slate-200/70 shadow-xs sticky top-24">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-emerald-700" />
+                <h3 className="font-bold text-slate-800 text-sm">Rekap Nama Petugas</h3>
+              </div>
+              <span className="bg-emerald-50 text-emerald-700 font-semibold text-xs px-2.5 py-1 rounded-lg">
+                {personnelSummary.length} Orang
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-400 mb-3">
+              Akumulasi keikutsertaan petugas berdasarkan filter yang aktif saat ini.
+            </p>
+
+            {personnelSummary.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 text-xs">
+                Belum ada data nama petugas pada filter ini.
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
+                {personnelSummary.map(([name, count], index) => (
+                  <div 
+                    key={index}
+                    onClick={() => setSearchTerm(name)}
+                    className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-emerald-50/60 border border-slate-200/60 rounded-xl cursor-pointer transition group"
+                    title={`Klik untuk melihat kegiatan ${name}`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-700 group-hover:text-emerald-900 truncate">
+                        {name}
+                      </span>
+                    </div>
+                    <span className="bg-white text-emerald-700 border border-emerald-200 text-xs font-bold px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
+                      {count} kegiatan
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {searchTerm && (
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span className="text-slate-500">Filter pencarian aktif</span>
+                <button 
+                  onClick={() => setSearchTerm('')}
+                  className="text-rose-600 font-semibold hover:underline"
+                >
+                  Reset Pencarian
+                </button>
+              </div>
+            )}
+          </div>
+
+        </div>
       </main>
 
       {/* Modal Add / Edit */}
