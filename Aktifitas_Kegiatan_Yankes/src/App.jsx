@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   ClipboardList, Plus, Search, Filter, Calendar, CheckCircle2, 
   Clock, AlertCircle, FileText, Upload, Trash2, Edit2, X, 
-  Users, Check, ExternalLink, ShieldCheck, Database, Download, Award
+  Users, Check, ExternalLink, ShieldCheck, Database, Download, Award, Sparkles
 } from 'lucide-react';
 import { supabase } from './supabase';
 
@@ -21,6 +21,9 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
+  
+  // Pop-up GIF Bergerak State (Dipastikan true agar langsung muncul saat load)
+  const [showGifModal, setShowGifModal] = useState(true);
   
   // Form State
   const [title, setTitle] = useState('');
@@ -270,7 +273,7 @@ export default function App() {
 
   // Hitung Akumulasi / Rekapan Nama Petugas beserta rincian kategori dari data yang sedang difilter
   const personnelSummary = (() => {
-    const summaryMap = {}; // Format: { "Nama Petugas": { total: angka, categories: { "Dinas": 2, "Rapat": 1 } } }
+    const summaryMap = {}; 
     
     filteredActivities.forEach(act => {
       if (Array.isArray(act.names)) {
@@ -289,7 +292,6 @@ export default function App() {
       }
     });
 
-    // Ubah ke array [name, dataObj] & urutkan dari total kegiatan terbanyak
     return Object.entries(summaryMap).sort((a, b) => b[1].total - a[1].total);
   })();
 
@@ -332,6 +334,49 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100/60 text-slate-800 pb-12 font-sans">
+      
+      {/* POP-UP GIF BERGERAK (Diletakkan di luar agar langsung menimpa layar dengan z-index maksimal) */}
+      {showGifModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-emerald-100 text-center relative overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Dekorasi Garis Atas */}
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+
+            <button 
+              onClick={() => setShowGifModal(false)}
+              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+              <Sparkles className="w-7 h-7 animate-pulse" />
+            </div>
+
+            <h3 className="text-lg font-bold text-slate-800 mb-1">Selamat Datang! 👋</h3>
+            <p className="text-xs text-slate-500 mb-4 px-2">
+              Sistem Aktivitas Kegiatan Pelayanan Kesehatan - Dinas Kesehatan Kabupaten Badung.
+            </p>
+
+            {/* Container GIF Bergerak */}
+            <div className="rounded-2xl overflow-hidden shadow-md border border-slate-100 mb-5 bg-slate-50 flex items-center justify-center h-44">
+              <img 
+                src="https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif" 
+                alt="Animated Welcome GIF" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            <button
+              onClick={() => setShowGifModal(false)}
+              className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-700/20 transition cursor-pointer"
+            >
+              Mulai Gunakan Aplikasi 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-emerald-700 text-white shadow-md sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -346,8 +391,15 @@ export default function App() {
           </div>
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <button
+              onClick={() => setShowGifModal(true)}
+              className="bg-emerald-800/80 hover:bg-emerald-800 text-white p-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-center transition cursor-pointer shrink-0"
+              title="Lihat Sambutan"
+            >
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-200" />
+            </button>
+            <button
               onClick={() => { resetForm(); setIsModalOpen(true); }}
-              className="bg-white text-emerald-700 hover:bg-emerald-50 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition shrink-0"
+              className="bg-white text-emerald-700 hover:bg-emerald-50 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-700" />
               <span>Tambah Kegiatan</span>
@@ -424,7 +476,7 @@ export default function App() {
               {dateFilter !== 'all' && (
                 <button
                   onClick={() => setDateFilter('all')}
-                  className="text-xs text-rose-600 font-semibold hover:underline ml-1 shrink-0"
+                  className="text-xs text-rose-600 font-semibold hover:underline ml-1 shrink-0 cursor-pointer"
                   title="Tampilkan Semua Tanggal"
                 >
                   Semua
@@ -464,7 +516,7 @@ export default function App() {
             {/* Tombol Export Excel */}
             <button
               onClick={exportToExcel}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition w-full sm:w-auto justify-center shrink-0"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition cursor-pointer w-full sm:w-auto justify-center shrink-0"
               title="Download Data ke Excel"
             >
               <Download className="w-4 h-4" />
@@ -571,7 +623,7 @@ export default function App() {
                       <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between mt-2">
                         <button
                           onClick={() => toggleComplete(act.id, act.completed)}
-                          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl transition ${
+                          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl transition cursor-pointer ${
                             act.completed 
                               ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' 
                               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -584,14 +636,14 @@ export default function App() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleEdit(act)}
-                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-xl transition"
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                             title="Edit"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(act.id)}
-                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
                             title="Hapus"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -666,7 +718,7 @@ export default function App() {
                 <span className="text-slate-500">Filter pencarian aktif</span>
                 <button 
                   onClick={() => setSearchTerm('')}
-                  className="text-rose-600 font-semibold hover:underline"
+                  className="text-rose-600 font-semibold hover:underline cursor-pointer"
                 >
                   Reset Pencarian
                 </button>
@@ -687,7 +739,7 @@ export default function App() {
               </h2>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -793,7 +845,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={handleAddName}
-                    className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-semibold transition shrink-0"
+                    className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-semibold transition cursor-pointer shrink-0"
                   >
                     Tambah
                   </button>
@@ -808,7 +860,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => handleRemoveName(idx)}
-                          className="text-slate-400 hover:text-rose-600 transition ml-1"
+                          className="text-slate-400 hover:text-rose-600 transition ml-1 cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -822,13 +874,13 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-sm font-semibold text-white shadow-sm transition"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-sm font-semibold text-white shadow-sm transition cursor-pointer"
                 >
                   {isEditing ? 'Simpan Perubahan' : 'Tambah Kegiatan'}
                 </button>
