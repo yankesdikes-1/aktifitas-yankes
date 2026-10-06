@@ -6,16 +6,6 @@ import {
 } from 'lucide-react';
 import { supabase } from './supabase';
 
-// Daftar nama petugas tetap (bisa diubah/ditambah sesuai kebutuhan tim Yankes)
-const STAFF_LIST = [
-  "Gus Satya",
-  "Dr. Kadek",
-  "Wayan Sudarma",
-  "Nyoman Sari",
-  "Ketut Adi",
-  "Komang Tri"
-];
-
 export default function App() {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +28,7 @@ export default function App() {
   const [priority, setPriority] = useState('Sedang');
   const [date, setDate] = useState(todayStr);
   
-  // Names State
+  // Ubah names menjadi array dan tambahkan inputName sementara
   const [names, setNames] = useState([]);
   const [inputName, setInputName] = useState('');
 
@@ -82,11 +72,9 @@ export default function App() {
     localStorage.setItem('yankes_activities', JSON.stringify(updated));
   };
 
-  const handleAddName = (nameToAdd) => {
-    const targetName = nameToAdd || inputName;
-    if (!targetName.trim()) return;
-    if (names.includes(targetName.trim())) return; // Mencegah duplikasi nama di satu kegiatan
-    setNames([...names, targetName.trim()]);
+  const handleAddName = () => {
+    if (!inputName.trim()) return;
+    setNames([...names, inputName.trim()]);
     setInputName('');
   };
 
@@ -296,6 +284,7 @@ export default function App() {
         });
       }
     });
+    // Ubah ke array & urutkan dari yang paling sering bertugas
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
   })();
 
@@ -486,10 +475,10 @@ export default function App() {
           </div>
         </div>
 
-        {/* Main Content Layout */}
+        {/* Main Content Layout (Grid dengan Panel Rekapan di Kanan) */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
           
-          {/* Bagian Kiri: Daftar Kegiatan */}
+          {/* Bagian Kiri: Daftar Kegiatan (3 Kolom) */}
           <div className="lg:col-span-3">
             {loading ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/70 shadow-xs">
@@ -518,7 +507,7 @@ export default function App() {
                       }`}
                     >
                       <div>
-                        {/* Top Meta */}
+                        {/* Top Meta: Kategori & Prioritas */}
                         <div className="flex items-center justify-between gap-2 mb-2.5">
                           <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
                             {act.category}
@@ -618,7 +607,7 @@ export default function App() {
             )}
           </div>
 
-          {/* Bagian Kanan: Panel Akumulasi Petugas */}
+          {/* Bagian Kanan: Panel Akumulasi / Rekapan Petugas */}
           <div className="lg:col-span-1 bg-white rounded-2xl p-5 border border-slate-200/70 shadow-xs sticky top-24">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2">
@@ -774,38 +763,14 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Bagian Input & Pilihan Cepat Nama Petugas */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Nama Petugas / Yang Mengikuti
                 </label>
-                
-                {/* Tombol Pilihan Cepat Nama Staf */}
-                <div className="mb-2">
-                  <p className="text-[11px] text-slate-400 mb-1.5">Pilihan Cepat Staf:</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {STAFF_LIST.map((staffName, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleAddName(staffName)}
-                        className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition ${
-                          names.includes(staffName)
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300 opacity-60 cursor-not-allowed'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'
-                        }`}
-                      >
-                        + {staffName}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Input Manual / Tambahan Nama Bebas */}
                 <div className="flex gap-2 mb-2">
                   <input
                     type="text"
-                    placeholder="Atau ketik nama lain di sini..."
+                    placeholder="Contoh: Gus Satya"
                     value={inputName}
                     onChange={(e) => setInputName(e.target.value)}
                     onKeyDown={(e) => {
@@ -818,14 +783,14 @@ export default function App() {
                   />
                   <button
                     type="button"
-                    onClick={() => handleAddName()}
+                    onClick={handleAddName}
                     className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-semibold transition shrink-0"
                   >
                     Tambah
                   </button>
                 </div>
 
-                {/* List Chip Nama Petugas yang Dipilih */}
+                {/* List Chip Nama Petugas yang Ditambahkan */}
                 {names.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
                     {names.map((name, idx) => (
@@ -860,67 +825,6 @@ export default function App() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Config Info Modal */}
-      {showConfigInfo && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Info className="w-5 h-5 text-emerald-600" />
-                <h2 className="text-lg font-bold text-slate-800">Panduan Hosting Vercel & Supabase</h2>
-              </div>
-              <button 
-                onClick={() => setShowConfigInfo(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="space-y-3 text-sm text-slate-600 leading-relaxed">
-              <p>
-                Aplikasi ini siap di-deploy ke <strong className="text-slate-800">Vercel</strong> dan terhubung ke database <strong className="text-slate-800">Supabase</strong>.
-              </p>
-              
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
-                <p className="font-semibold text-slate-700">1. Tabel Supabase (SQL Editor):</p>
-                <pre className="bg-slate-900 text-emerald-400 p-2.5 rounded-lg text-xs overflow-x-auto">
-{`CREATE TABLE activities (
-  id SERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
-  category TEXT,
-  priority TEXT,
-  date DATE,
-  names TEXT[],
-  pdf_url TEXT,
-  pdf_name TEXT,
-  completed BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);`}
-                </pre>
-              </div>
-
-              <div>
-                <p className="font-semibold text-slate-700 mb-1">2. Environment Variables di Vercel:</p>
-                <ul className="list-disc pl-5 space-y-1 text-xs">
-                  <li><code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-700">VITE_SUPABASE_URL</code>: URL Project Supabase Anda</li>
-                  <li><code className="bg-slate-100 px-1 py-0.5 rounded text-emerald-700">VITE_SUPABASE_ANON_KEY</code>: Anon Public Key Supabase Anda</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-3 border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setShowConfigInfo(false)}
-                className="px-4 py-2 bg-emerald-700 text-white rounded-xl text-sm font-semibold hover:bg-emerald-800 transition"
-              >
-                Mengerti
-              </button>
-            </div>
           </div>
         </div>
       )}
