@@ -361,7 +361,7 @@ export default function App() {
             {/* Container GIF Bergerak */}
             <div className="rounded-2xl overflow-hidden shadow-md border border-slate-100 mb-5 bg-slate-50 flex items-center justify-center h-44">
               <img 
-                src="https://drive.google.com/file/d/1vVVdxvOCgt6mYlzZ5gamPl5ESRn2yNAD/view?usp=sharing" 
+                src="https://media.giphy.com/media/fTUhnIKty0O3JqzQkm/giphy.gif" 
                 alt="Animated Welcome GIF" 
                 className="w-full h-full object-cover"
               />
