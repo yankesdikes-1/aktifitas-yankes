@@ -366,14 +366,14 @@ export default function App() {
               <Sparkles className="w-7 h-7 animate-pulse" />
             </div>
 
-            <h3 className="text-lg font-bold text-slate-800 mb-1">Selamat Datang! 👋</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-1">Selamat Datang Sahabat Yankes! 👋</h3>
             <p className="text-xs text-slate-500 mb-4 px-2">
-              Sistem Aktivitas Kegiatan Pelayanan Kesehatan - Dinas Kesehatan Kabupaten Badung.
+              Sistem Aktivitas Kegiatan Bidang Pelayanan Kesehatan - Dinas Kesehatan Kabupaten Badung.
             </p>
 
             <div className="rounded-2xl overflow-hidden shadow-md border border-slate-100 mb-5 bg-slate-50 flex items-center justify-center h-44">
               <img 
-                src="https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif" 
+                src="https://media.giphy.com/media/fTUhnIKty0O3JqzQkm/giphy.gif" 
                 alt="Animated Welcome GIF" 
                 className="w-full h-full object-cover"
               />
