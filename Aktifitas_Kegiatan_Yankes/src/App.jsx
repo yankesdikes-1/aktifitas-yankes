@@ -22,8 +22,12 @@ export default function App() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   
-  // Pop-up GIF Bergerak State (Dipastikan true agar langsung muncul saat load)
+  // Pop-up GIF Sambutan Awal
   const [showGifModal, setShowGifModal] = useState(true);
+
+  // Pop-up Sukses Tambah/Edit Kegiatan
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   
   // Form State
   const [title, setTitle] = useState('');
@@ -151,6 +155,8 @@ export default function App() {
       completed: false
     };
 
+    const actionType = isEditing ? 'perubahan kegiatan berhasil disimpan!' : 'kegiatan baru berhasil ditambahkan!';
+
     try {
       if (isEditing && currentId) {
         const { error } = await supabase
@@ -180,6 +186,11 @@ export default function App() {
 
       resetForm();
       setIsModalOpen(false);
+      
+      // Tampilkan Pop-up Sukses
+      setSuccessMessage(actionType);
+      setShowSuccessModal(true);
+
     } catch (err) {
       console.error('Save error:', err);
       if (isEditing) {
@@ -191,6 +202,10 @@ export default function App() {
       }
       resetForm();
       setIsModalOpen(false);
+
+      // Tampilkan Pop-up Sukses (mode offline/fallback)
+      setSuccessMessage(actionType);
+      setShowSuccessModal(true);
     }
   };
 
@@ -271,7 +286,6 @@ export default function App() {
     return matchesSearch && matchesStatus && matchesCategory && matchesDate;
   });
 
-  // Hitung Akumulasi / Rekapan Nama Petugas beserta rincian kategori dari data yang sedang difilter
   const personnelSummary = (() => {
     const summaryMap = {}; 
     
@@ -335,11 +349,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100/60 text-slate-800 pb-12 font-sans">
       
-      {/* POP-UP GIF BERGERAK (Diletakkan di luar agar langsung menimpa layar dengan z-index maksimal) */}
+      {/* POP-UP GIF SAMBUTAN AWAL */}
       {showGifModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-emerald-100 text-center relative overflow-hidden animate-in fade-in zoom-in duration-200">
-            {/* Dekorasi Garis Atas */}
             <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
 
             <button 
@@ -353,15 +366,14 @@ export default function App() {
               <Sparkles className="w-7 h-7 animate-pulse" />
             </div>
 
-            <h3 className="text-lg font-bold text-slate-800 mb-1">Selamat Datang Sahabat Yankes! 👋</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-1">Selamat Datang! 👋</h3>
             <p className="text-xs text-slate-500 mb-4 px-2">
-              Sistem Aktivitas Kegiatan Bidang Pelayanan Kesehatan - Dinas Kesehatan Kabupaten Badung.
+              Sistem Aktivitas Kegiatan Pelayanan Kesehatan - Dinas Kesehatan Kabupaten Badung.
             </p>
 
-            {/* Container GIF Bergerak */}
             <div className="rounded-2xl overflow-hidden shadow-md border border-slate-100 mb-5 bg-slate-50 flex items-center justify-center h-44">
               <img 
-                src="https://media.giphy.com/media/fTUhnIKty0O3JqzQkm/giphy.gif" 
+                src="https://media.giphy.com/media/3o7TKSjRrfIPjeiOkM/giphy.gif" 
                 alt="Animated Welcome GIF" 
                 className="w-full h-full object-cover"
               />
@@ -372,6 +384,31 @@ export default function App() {
               className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-700/20 transition cursor-pointer"
             >
               Mulai Gunakan Aplikasi 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* POP-UP NOTIFIKASI SUKSES SETELAH TAMBAH / EDIT KEGIATAN */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-emerald-100 text-center relative overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+              <CheckCircle2 className="w-10 h-10 animate-bounce" />
+            </div>
+
+            <h3 className="text-lg font-bold text-slate-800 mb-1">Berhasil! 🎉</h3>
+            <p className="text-xs text-slate-600 mb-6 px-2 capitalize font-medium">
+              {successMessage}
+            </p>
+
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-700/20 transition cursor-pointer"
+            >
+              OK, Mengerti 👍
             </button>
           </div>
         </div>
