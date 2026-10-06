@@ -145,7 +145,7 @@ export default function App() {
       category,
       priority,
       date,
-      names: names, // Menyimpan langsung sebagai array
+      names: names,
       pdf_url: pdfUrl || '',
       pdf_name: pdfName || '',
       completed: false
@@ -266,13 +266,11 @@ export default function App() {
     
     const matchesCategory = categoryFilter === 'all' ? true : act.category === categoryFilter;
 
-    // Filter Tanggal
     const matchesDate = dateFilter === 'all' ? true : act.date === dateFilter;
 
     return matchesSearch && matchesStatus && matchesCategory && matchesDate;
   });
 
-  // Fungsi Export ke Excel (CSV format)
   const exportToExcel = () => {
     if (filteredActivities.length === 0) {
       alert('Tidak ada data kegiatan untuk diexport!');
@@ -325,6 +323,13 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+            <button
+              onClick={() => setShowConfigInfo(true)}
+              className="bg-emerald-800/80 hover:bg-emerald-800 text-white p-2.5 rounded-xl text-xs sm:text-sm flex items-center justify-center transition shrink-0"
+              title="Panduan Konfigurasi Supabase"
+            >
+              <Info className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
             <button
               onClick={() => { resetForm(); setIsModalOpen(true); }}
               className="bg-white text-emerald-700 hover:bg-emerald-50 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition shrink-0"
@@ -463,7 +468,7 @@ export default function App() {
           <div className="text-center py-16 bg-white rounded-2xl border border-slate-200/70 shadow-xs">
             <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-700 font-semibold">Tidak ada kegiatan ditemukan untuk tanggal ini</p>
-            <p className="text-slate-400 text-sm mt-1">Ubah filter tanggal di atas untuk melihat kegiatan hari kemarin atau tanggal lainnya.</p>
+            <p className="text-slate-400 text-sm mt-1">Ubah filter tanggal di atas untuk melihat kegiatan pada tanggal lainnya.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -477,12 +482,12 @@ export default function App() {
                 <div 
                   key={act.id} 
                   className={`bg-white rounded-2xl p-5 border shadow-xs transition flex flex-col justify-between ${
-                    act.completed ? 'border-emerald-200 bg-emerald-50/10' : 'border-slate-200/70 hover:shadow-md'
+                    act.completed ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200/70 hover:shadow-md'
                   }`}
                 >
                   <div>
-                    {/* Top Meta */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
+                    {/* Top Meta: Kategori & Prioritas */}
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
                       <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
                         {act.category}
                       </span>
@@ -491,30 +496,30 @@ export default function App() {
                       </span>
                     </div>
 
-                    {/* Title */}
-                    <h3 className={`font-semibold text-base mb-2.5 leading-snug ${act.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                    {/* Title Kegiatan */}
+                    <h3 className={`font-bold text-base mb-2 leading-snug ${act.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
                       {act.title}
                     </h3>
 
-                    {/* Date */}
+                    {/* Tanggal Kegiatan (Dibuat Lebih Menonjol) */}
                     {act.date && (
-                      <div className="flex items-center gap-2 text-xs text-slate-500 mb-3.5">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50/80 px-3 py-1.5 rounded-xl mb-3.5 border border-emerald-100">
+                        <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
                         <span>{new Date(act.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                       </div>
                     )}
 
-                    {/* Names / Assigned Personnel */}
+                    {/* Names / Assigned Personnel (Dibuat Sangat Jelas) */}
                     {act.names && Array.isArray(act.names) && act.names.length > 0 && (
-                      <div className="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 mb-2">
-                          <Users className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span>Petugas / Nama Terlibat:</span>
+                      <div className="mb-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-2">
+                          <Users className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Petugas / Nama Terlibat ({act.names.length}):</span>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {act.names.map((name, idx) => (
-                            <span key={idx} className="bg-white text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200/80 font-medium shadow-2xs">
-                              {name}
+                            <span key={idx} className="bg-white text-emerald-900 text-xs px-2.5 py-1 rounded-lg border border-emerald-200/80 font-semibold shadow-2xs">
+                              ✓ {name}
                             </span>
                           ))}
                         </div>
@@ -528,11 +533,11 @@ export default function App() {
                           href={act.pdf_url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-xs bg-emerald-50 text-emerald-700 px-3 py-2 rounded-xl border border-emerald-200 hover:bg-emerald-100 transition font-medium w-full truncate"
+                          className="inline-flex items-center gap-2 text-xs bg-slate-50 text-slate-700 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 transition font-medium w-full truncate"
                         >
                           <FileText className="w-4 h-4 shrink-0 text-emerald-600" />
                           <span className="truncate">{act.pdf_name || 'Dokumen PDF'}</span>
-                          <ExternalLink className="w-3.5 h-3.5 ml-auto shrink-0" />
+                          <ExternalLink className="w-3.5 h-3.5 ml-auto shrink-0 text-slate-400" />
                         </a>
                       </div>
                     )}
