@@ -268,21 +268,29 @@ export default function App() {
     return matchesSearch && matchesStatus && matchesCategory && matchesDate;
   });
 
-  // Hitung Akumulasi / Rekapan Nama Petugas dari data yang sedang difilter
+  // Hitung Akumulasi / Rekapan Nama Petugas beserta rincian kategori dari data yang sedang difilter
   const personnelSummary = (() => {
-    const counts = {};
+    const summaryMap = {}; // Format: { "Nama Petugas": { total: angka, categories: { "Dinas": 2, "Rapat": 1 } } }
+    
     filteredActivities.forEach(act => {
       if (Array.isArray(act.names)) {
         act.names.forEach(name => {
           const trimmed = name.trim();
           if (trimmed) {
-            counts[trimmed] = (counts[trimmed] || 0) + 1;
+            if (!summaryMap[trimmed]) {
+              summaryMap[trimmed] = { total: 0, categories: {} };
+            }
+            summaryMap[trimmed].total += 1;
+
+            const cat = act.category || 'Lainnya';
+            summaryMap[trimmed].categories[cat] = (summaryMap[trimmed].categories[cat] || 0) + 1;
           }
         });
       }
     });
-    // Ubah ke array & urutkan dari yang paling sering bertugas
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+    // Ubah ke array [name, dataObj] & urutkan dari total kegiatan terbanyak
+    return Object.entries(summaryMap).sort((a, b) => b[1].total - a[1].total);
   })();
 
   const exportToExcel = () => {
@@ -597,7 +605,7 @@ export default function App() {
             )}
           </div>
 
-          {/* Bagian Kanan: Panel Akumulasi / Rekapan Petugas */}
+          {/* Bagian Kanan: Panel Akumulasi / Rekapan Petugas dengan Rincian Kategori */}
           <div className="lg:col-span-1 bg-white rounded-2xl p-5 border border-slate-200/70 shadow-xs sticky top-24">
             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2">
@@ -610,7 +618,7 @@ export default function App() {
             </div>
 
             <p className="text-xs text-slate-400 mb-3">
-              Akumulasi keikutsertaan petugas berdasarkan filter yang aktif saat ini.
+              Akumulasi keikutsertaan petugas dan rincian kategori berdasarkan filter aktif.
             </p>
 
             {personnelSummary.length === 0 ? (
@@ -618,25 +626,36 @@ export default function App() {
                 Belum ada data nama petugas pada filter ini.
               </div>
             ) : (
-              <div className="space-y-2 max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
-                {personnelSummary.map(([name, count], index) => (
+              <div className="space-y-2.5 max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
+                {personnelSummary.map(([name, data], index) => (
                   <div 
                     key={index}
                     onClick={() => setSearchTerm(name)}
-                    className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-emerald-50/60 border border-slate-200/60 rounded-xl cursor-pointer transition group"
+                    className="p-3 bg-slate-50 hover:bg-emerald-50/60 border border-slate-200/60 rounded-xl cursor-pointer transition group"
                     title={`Klik untuk melihat kegiatan ${name}`}
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center shrink-0">
-                        {index + 1}
-                      </span>
-                      <span className="text-xs font-semibold text-slate-700 group-hover:text-emerald-900 truncate">
-                        {name}
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center shrink-0">
+                          {index + 1}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-700 group-hover:text-emerald-900 truncate">
+                          {name}
+                        </span>
+                      </div>
+                      <span className="bg-white text-emerald-700 border border-emerald-200 text-xs font-bold px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
+                        {data.total} total
                       </span>
                     </div>
-                    <span className="bg-white text-emerald-700 border border-emerald-200 text-xs font-bold px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
-                      {count} kegiatan
-                    </span>
+
+                    {/* Rincian Kategori per Petugas */}
+                    <div className="flex flex-wrap gap-1 pl-7">
+                      {Object.entries(data.categories).map(([cat, count], idxCat) => (
+                        <span key={idxCat} className="text-[10px] bg-white text-slate-600 border border-slate-200 px-2 py-0.5 rounded font-medium">
+                          {cat}: <strong className="text-emerald-700">{count}</strong>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
